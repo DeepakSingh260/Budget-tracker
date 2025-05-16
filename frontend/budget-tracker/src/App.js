@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { useDispatch, useSelector } from 'react-redux';
@@ -66,6 +66,8 @@ function App() {
             <Route path="transactions" element={<Transactions />} />
             <Route path="budgets" element={<Budgets />} />
           </Route>
+          {/* Catch all route - redirect to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
     </ThemeProvider>
