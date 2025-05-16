@@ -1,14 +1,25 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import authService from '../../services/authService';
 
+// Get user from localStorage
+const user = JSON.parse(localStorage.getItem('user'));
+
+const initialState = {
+  user: user || null,
+  isAuthenticated: !!user,
+  loading: false,
+  error: null,
+};
+
 export const login = createAsyncThunk(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
     try {
       const response = await authService.login(credentials);
+      localStorage.setItem('user', JSON.stringify(response));
       return response;
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(error.response?.data || 'Login failed');
     }
   }
 );
@@ -18,21 +29,18 @@ export const register = createAsyncThunk(
   async (userData, { rejectWithValue }) => {
     try {
       const response = await authService.register(userData);
+      localStorage.setItem('user', JSON.stringify(response));
       return response;
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(error.response?.data || 'Registration failed');
     }
   }
 );
 
 export const logout = createAsyncThunk(
   'auth/logout',
-  async (_, { rejectWithValue }) => {
-    try {
-      await authService.logout();
-    } catch (error) {
-      return rejectWithValue(error.response.data);
-    }
+  async () => {
+    authService.logout();
   }
 );
 
@@ -41,19 +49,13 @@ export const getUserProfile = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await authService.getUserProfile();
+      localStorage.setItem('user', JSON.stringify(response));
       return response;
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(error.response?.data || 'Failed to get user profile');
     }
   }
 );
-
-const initialState = {
-  user: null,
-  isAuthenticated: false,
-  loading: false,
-  error: null,
-};
 
 const authSlice = createSlice({
   name: 'auth',
@@ -72,12 +74,13 @@ const authSlice = createSlice({
       })
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
-        state.isAuthenticated = true;
         state.user = action.payload;
+        state.isAuthenticated = true;
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        state.isAuthenticated = false;
       })
       // Register
       .addCase(register.pending, (state) => {
@@ -86,12 +89,13 @@ const authSlice = createSlice({
       })
       .addCase(register.fulfilled, (state, action) => {
         state.loading = false;
-        state.isAuthenticated = true;
         state.user = action.payload;
+        state.isAuthenticated = true;
       })
       .addCase(register.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        state.isAuthenticated = false;
       })
       // Logout
       .addCase(logout.fulfilled, (state) => {

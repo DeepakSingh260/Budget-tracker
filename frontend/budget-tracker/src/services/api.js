@@ -1,18 +1,17 @@
 import axios from 'axios';
-
-const API_URL = 'http://localhost:8000';
+import API_CONFIG from '../config/api';
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: API_CONFIG.BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor for adding auth token
+// Add a request interceptor to include the token in all requests
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -34,7 +33,7 @@ api.interceptors.response.use(
 
       try {
         const refreshToken = localStorage.getItem('refresh_token');
-        const response = await axios.post(`${API_URL}/auth/login/refresh/`, {
+        const response = await axios.post(`${API_CONFIG.BASE_URL}/auth/login/refresh/`, {
           refresh: refreshToken,
         });
 

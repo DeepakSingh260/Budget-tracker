@@ -28,6 +28,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  CircularProgress,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -46,13 +47,20 @@ function Budgets() {
     category: '',
     amount: '',
     period: 'monthly',
+    currency: 'INR'
   });
 
   useEffect(() => {
-    dispatch(getBudgets());
     dispatch(getCategories());
+    dispatch(getBudgets());
     dispatch(getTransactions());
   }, [dispatch]);
+
+  useEffect(() => {
+    // console.log('Budgets:', budgets);
+    // console.log('Categories:', categories);
+    // console.log('Transactions:', transactions);
+  }, [budgets, categories, transactions]);
 
   const handleOpen = (budget = null) => {
     if (budget) {
@@ -61,6 +69,7 @@ function Budgets() {
         category: budget.category,
         amount: budget.amount,
         period: budget.period,
+        currency: 'INR'
       });
     } else {
       setEditingBudget(null);
@@ -68,6 +77,7 @@ function Budgets() {
         category: '',
         amount: '',
         period: 'monthly',
+        currency: 'INR'
       });
     }
     setOpen(true);
@@ -80,6 +90,7 @@ function Budgets() {
       category: '',
       amount: '',
       period: 'monthly',
+      currency: 'INR'
     });
   };
 
@@ -95,6 +106,8 @@ function Budgets() {
     const submitData = {
       ...formData,
       amount: parseFloat(formData.amount),
+      month: new Date().toISOString().split('T')[0],
+      period: formData.period || 'monthly'
     };
     if (editingBudget) {
       await dispatch(updateBudget({ id: editingBudget.id, ...submitData }));
@@ -102,6 +115,7 @@ function Budgets() {
       await dispatch(createBudget(submitData));
     }
     handleClose();
+    dispatch(getBudgets());
   };
 
   const handleDelete = async (id) => {
@@ -119,17 +133,18 @@ function Budgets() {
       .filter(
         (t) =>
           t.category === budget.category &&
-          t.type === 'expense' &&
+          t.transaction_type === 'expense' &&
           new Date(t.date) >= startOfMonth &&
           new Date(t.date) <= endOfMonth
       )
-      .reduce((acc, t) => acc + t.amount, 0);
+      .reduce((acc, t) => acc + parseFloat(t.amount), 0);
 
-    const progress = (monthlyExpenses / budget.amount) * 100;
+    const budgetAmount = parseFloat(budget.amount);
+    const progress = (monthlyExpenses / budgetAmount) * 100;
     return {
       spent: monthlyExpenses,
       progress: Math.min(progress, 100),
-      remaining: Math.max(budget.amount - monthlyExpenses, 0),
+      remaining: Math.max(budgetAmount - monthlyExpenses, 0),
     };
   };
 
@@ -152,17 +167,31 @@ function Budgets() {
         </Alert>
       )}
 
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
+          <CircularProgress />
+        </Box>
+      )}
+
+      {!loading && budgets.length === 0 && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          No budgets found. Create your first budget by clicking the "Add Budget" button.
+        </Alert>
+      )}
+
       <Grid container spacing={3}>
         {budgets.map((budget) => {
           const { spent, progress, remaining } = calculateProgress(budget);
           const category = categories.find((c) => c.id === budget.category);
+          const period = budget.period || 'monthly';
+          const budgetAmount = parseFloat(budget.amount);
 
           return (
             <Grid item xs={12} md={6} lg={4} key={budget.id}>
               <Card>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="h6">{category?.name}</Typography>
+                    <Typography variant="h6">{category?.name || 'Uncategorized'}</Typography>
                     <Box>
                       <IconButton
                         color="primary"
@@ -179,17 +208,17 @@ function Budgets() {
                     </Box>
                   </Box>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    {budget.period.charAt(0).toUpperCase() + budget.period.slice(1)} Budget
+                    {period.charAt(0).toUpperCase() + period.slice(1)} Budget
                   </Typography>
                   <Typography variant="h5" gutterBottom>
-                    ${budget.amount.toFixed(2)}
+                    ₹{budgetAmount.toFixed(2)}
                   </Typography>
                   <Box sx={{ mt: 2 }}>
                     <Typography variant="body2" color="text.secondary">
-                      Spent: ${spent.toFixed(2)}
+                      Spent: ₹{spent.toFixed(2)}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Remaining: ${remaining.toFixed(2)}
+                      Remaining: ₹{remaining.toFixed(2)}
                     </Typography>
                     <LinearProgress
                       variant="determinate"
@@ -221,11 +250,15 @@ function Budgets() {
                     onChange={handleChange}
                     label="Category"
                   >
-                    {categories.map((category) => (
-                      <MenuItem key={category.id} value={category.id}>
-                        {category.name}
-                      </MenuItem>
-                    ))}
+                    {categories && categories.length > 0 ? (
+                      categories.map((category) => (
+                        <MenuItem key={category.id} value={category.id}>
+                          {category.name}
+                        </MenuItem>
+                      ))
+                    ) : (
+                      <MenuItem disabled>No categories available</MenuItem>
+                    )}
                   </Select>
                 </FormControl>
               </Grid>
@@ -238,6 +271,9 @@ function Budgets() {
                   type="number"
                   value={formData.amount}
                   onChange={handleChange}
+                  InputProps={{
+                    startAdornment: <span style={{ marginRight: '8px' }}>₹</span>,
+                  }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>

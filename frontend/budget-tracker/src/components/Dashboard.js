@@ -36,7 +36,7 @@ function Dashboard() {
   }, [dispatch]);
 
   const totalBalance = transactions.reduce((acc, transaction) => {
-    return acc + (transaction.type === 'income' ? transaction.amount : -transaction.amount);
+    return acc + (transaction.transaction_type === 'income' ? parseFloat(transaction.amount) : -parseFloat(transaction.amount));
   }, 0);
 
   const recentTransactions = transactions.slice(0, 5);
@@ -44,7 +44,7 @@ function Dashboard() {
   const categoryTotals = categories.map(category => {
     const total = transactions
       .filter(t => t.category === category.id)
-      .reduce((acc, t) => acc + (t.type === 'income' ? t.amount : -t.amount), 0);
+      .reduce((acc, t) => acc + (t.transaction_type === 'income' ? parseFloat(t.amount) : -parseFloat(t.amount)), 0);
     return { ...category, total };
   });
 
@@ -63,7 +63,7 @@ function Dashboard() {
                 <Typography variant="h6">Total Balance</Typography>
               </Box>
               <Typography variant="h4" color={totalBalance >= 0 ? 'success.main' : 'error.main'}>
-                ${totalBalance.toFixed(2)}
+                ₹{totalBalance.toFixed(2)}
               </Typography>
             </CardContent>
           </Card>
@@ -106,9 +106,9 @@ function Dashboard() {
                       secondary={new Date(transaction.date).toLocaleDateString()}
                     />
                     <Typography
-                      color={transaction.type === 'income' ? 'success.main' : 'error.main'}
+                      color={transaction.transaction_type === 'income' ? 'success.main' : 'error.main'}
                     >
-                      ${transaction.amount.toFixed(2)}
+                      ₹{parseFloat(transaction.amount).toFixed(2)}
                     </Typography>
                   </ListItem>
                   <Divider />
@@ -135,7 +135,7 @@ function Dashboard() {
                     <Typography
                       color={category.total >= 0 ? 'success.main' : 'error.main'}
                     >
-                      ${category.total.toFixed(2)}
+                      ₹{parseFloat(category.total).toFixed(2)}
                     </Typography>
                   </ListItem>
                   <Divider />

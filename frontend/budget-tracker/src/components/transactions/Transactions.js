@@ -50,9 +50,9 @@ function Transactions() {
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
-    type: 'expense',
+    transaction_type: 'expense',
     category: '',
-    date: new Date(),
+    date: new Date().toISOString().split('T')[0],
   });
 
   useEffect(() => {
@@ -66,18 +66,18 @@ function Transactions() {
       setFormData({
         description: transaction.description,
         amount: transaction.amount,
-        type: transaction.type,
+        transaction_type: transaction.transaction_type,
         category: transaction.category,
-        date: new Date(transaction.date),
+        date: new Date(transaction.date).toISOString().split('T')[0],
       });
     } else {
       setEditingTransaction(null);
       setFormData({
         description: '',
         amount: '',
-        type: 'expense',
+        transaction_type: 'expense',
         category: '',
-        date: new Date(),
+        date: new Date().toISOString().split('T')[0],
       });
     }
     setOpen(true);
@@ -89,9 +89,9 @@ function Transactions() {
     setFormData({
       description: '',
       amount: '',
-      type: 'expense',
+      transaction_type: 'expense',
       category: '',
-      date: new Date(),
+      date: new Date().toISOString().split('T')[0],
     });
   };
 
@@ -114,6 +114,7 @@ function Transactions() {
     const submitData = {
       ...formData,
       amount: parseFloat(formData.amount),
+      date: formData.date,
     };
     if (editingTransaction) {
       await dispatch(updateTransaction({ id: editingTransaction.id, ...submitData }));
@@ -170,17 +171,17 @@ function Transactions() {
                 <TableCell>
                   {categories.find((c) => c.id === transaction.category)?.name}
                 </TableCell>
-                <TableCell>{transaction.type}</TableCell>
+                <TableCell>{transaction.transaction_type}</TableCell>
                 <TableCell
                   align="right"
                   sx={{
                     color:
-                      transaction.type === 'income'
+                      transaction.transaction_type === 'income'
                         ? 'success.main'
                         : 'error.main',
                   }}
                 >
-                  ${transaction.amount.toFixed(2)}
+                  ₹{parseFloat(transaction.amount).toFixed(2)}
                 </TableCell>
                 <TableCell align="right">
                   <IconButton
@@ -228,14 +229,17 @@ function Transactions() {
                   type="number"
                   value={formData.amount}
                   onChange={handleChange}
+                  InputProps={{
+                    startAdornment: <span style={{ marginRight: '8px' }}>₹</span>,
+                  }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth required>
                   <InputLabel>Type</InputLabel>
                   <Select
-                    name="type"
-                    value={formData.type}
+                    name="transaction_type"
+                    value={formData.transaction_type}
                     onChange={handleChange}
                     label="Type"
                   >
@@ -262,16 +266,18 @@ function Transactions() {
                 </FormControl>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                  <DatePicker
-                    label="Date"
-                    value={formData.date}
-                    onChange={handleDateChange}
-                    renderInput={(params) => (
-                      <TextField {...params} fullWidth required />
-                    )}
-                  />
-                </LocalizationProvider>
+                <TextField
+                  required
+                  fullWidth
+                  label="Date"
+                  name="date"
+                  type="date"
+                  value={formData.date}
+                  onChange={handleChange}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                />
               </Grid>
             </Grid>
           </Box>
