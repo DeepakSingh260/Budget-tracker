@@ -1,4 +1,3 @@
-﻿# Budget-tracker
 # Budget Tracker Application Documentation
 
 ## Overview
